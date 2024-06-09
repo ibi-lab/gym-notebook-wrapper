@@ -235,12 +235,12 @@ class Monitor(RecordVideo):
 
     def _close_running_video(self):
         if self.video_recorder:
-            logging.error(
+            logging.debug(
                 f'video_recorder.recorded_frames: {len(self.video_recorder.recorded_frames)}, '
                 f'video_recorder.frames_per_sec: {self.video_recorder.frames_per_sec}'
             )
-            for f in self.video_recorder.recorded_frames:
-                logging.error(f'frame: {f.shape}')
+            # for f in self.video_recorder.recorded_frames:
+            #     logging.debug(f'frame: {f.shape}')
 
             self.close_video_recorder()
             if self.video_recorder.functional:
