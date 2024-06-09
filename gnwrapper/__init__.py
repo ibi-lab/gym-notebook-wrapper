@@ -5,11 +5,13 @@ import os
 from typing import Optional, Callable
 import subprocess
 from unittest.mock import patch
+import logging
+import traceback
 
-import gym
-from gym import Wrapper
+import gymnasium as gym
+from gymnasium import Wrapper
 
-from gym.wrappers import RecordVideo
+from gymnasium.wrappers import RecordVideo
 
 from IPython import display
 import matplotlib.pyplot as plt
@@ -67,7 +69,8 @@ class VirtualDisplay(Wrapper):
         """
         super().__init__(env)
         self.size = size
-        self._display = _VirtualDisplaySingleton(size)
+        # self._display = _VirtualDisplaySingleton(size)
+        self.display = Display(visible=0, size=size)
 
     def render(self,mode=None,**kwargs):
         """
@@ -223,7 +226,8 @@ class Monitor(RecordVideo):
         if directory is None:
             directory = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 
-        self._display = _VirtualDisplaySingleton(size)
+        # self._display = _VirtualDisplaySingleton(size)
+        self._display = Display(visible=0, size=size)
 
         kwargs[_video_callable_key] = video_callable
         super().__init__(env, directory, *args, **kwargs)
@@ -231,21 +235,86 @@ class Monitor(RecordVideo):
 
     def _close_running_video(self):
         if self.video_recorder:
+            logging.error(
+                f'video_recorder.recorded_frames: {len(self.video_recorder.recorded_frames)}, '
+                f'video_recorder.frames_per_sec: {self.video_recorder.frames_per_sec}'
+            )
+            for f in self.video_recorder.recorded_frames:
+                logging.error(f'frame: {f.shape}')
+
             self.close_video_recorder()
             if self.video_recorder.functional:
                 self.videos.append((self.video_recorder.path,
                                     self.video_recorder.metadata_path))
             self.video_recorder = None
 
-    def step(self,action):
+    # def step(self,action):
+    #     """
+    #     Step Environment
+    #     """
+    #     try:
+    #         # return super().step(action)
+    #         observation, rewards, done, info = super().step(action)
+    #         return observation, rewards, done, info
+
+    #     except KeyboardInterrupt:
+    #         self._close_running_video()
+    #         raise
+
+    def step(self, action):
         """
-        Step Environment
+        Steps through the environment using action, recording observations if :attr:`self.recording`.
         """
-        try:
-            return super().step(action)
-        except KeyboardInterrupt:
-            self._close_running_video()
-            raise
+        (
+            observations,
+            rewards,
+            terminateds,
+            # truncateds,
+            infos,
+        ) = self.env.step(action)
+
+        # if not (self.terminated or self.truncated):
+        if not (self.terminated):
+            # increment steps and episodes
+            self.step_id += 1
+            if not self.is_vector_env:
+                # if terminateds or truncateds:
+                if terminateds:
+                    self.episode_id += 1
+                    self.terminated = terminateds
+                    # self.truncated = truncateds
+            # elif terminateds[0] or truncateds[0]:
+            elif terminateds[0]:
+                self.episode_id += 1
+                self.terminated = terminateds[0]
+                # self.truncated = truncateds[0]
+
+            if self.recording:
+                assert self.video_recorder is not None
+                self.video_recorder.capture_frame()
+                # logging.error('video_recoreder.recorded_frames[-1]:%s', self.video_recorder.recorded_frames[-1].shape)
+                self.recorded_frames += 1
+                if self.video_length > 0:
+                    if self.recorded_frames > self.video_length:
+                        self.close_video_recorder()
+                else:
+                    if not self.is_vector_env:
+                        # if terminateds or truncateds:
+                        if terminateds:
+                            try:
+                                self.close_video_recorder()
+                            except:
+                                logging.error(traceback.format_exc())
+                    # elif terminateds[0] or truncateds[0]:
+                    elif terminateds[0]:
+                        self.close_video_recorder()
+
+            elif self._video_enabled():
+                self.start_video_recorder()
+
+        # return observations, rewards, terminateds, truncateds, infos
+        return observations, rewards, terminateds, infos
+
 
     def reset(self,**kwargs):
         """
