@@ -265,13 +265,38 @@ class Monitor(RecordVideo):
         """
         Steps through the environment using action, recording observations if :attr:`self.recording`.
         """
-        (
-            observations,
-            rewards,
-            terminateds,
-            # truncateds,
-            infos,
-        ) = self.env.step(action)
+        # (
+        #     observations,
+        #     rewards,
+        #     terminateds,
+        #     # truncateds,
+        #     infos,
+        # ) = self.env.step(action)
+
+        ret = self.env.step(action)
+
+        if len(ret) == 4:
+            # stable-baselines3 env 環境だった場合
+            (
+                observations,
+                rewards,
+                terminateds,
+                # truncateds,
+                infos,
+            ) = ret
+        elif len(ret) == 5:
+            # gymnasium env 環境だった場合
+            (
+                observations,
+                rewards,
+                terminateds,
+                truncateds,
+                infos,
+            ) = ret
+            # terminateds = [False]
+        else:
+            raise ValueError(f"Invalid return value from env.step: {ret}")
+
 
         # if not (self.terminated or self.truncated):
         if not (self.terminated):
