@@ -275,6 +275,7 @@ class Monitor(RecordVideo):
 
         ret = self.env.step(action)
 
+        is_vector_env = False
         if len(ret) == 4:
             # stable-baselines3 env 環境だった場合
             (
@@ -284,6 +285,7 @@ class Monitor(RecordVideo):
                 # truncateds,
                 infos,
             ) = ret
+            is_vector_env = True
         elif len(ret) == 5:
             # gymnasium env 環境だった場合
             (
@@ -302,7 +304,8 @@ class Monitor(RecordVideo):
         # if not (self.terminated):
             # increment steps and episodes
         self.step_id += 1
-        if not self.is_vector_env:
+        # if not self.is_vector_env:
+        if not is_vector_env:
             # if terminateds or truncateds:
             if terminateds:
                 self.episode_id += 1
@@ -323,7 +326,8 @@ class Monitor(RecordVideo):
                 if self.recorded_frames > self.video_length:
                     self.close_video_recorder()
             else:
-                if not self.is_vector_env:
+                # if not self.is_vector_env:
+                if not is_vector_env:
                     # if terminateds or truncateds:
                     if terminateds:
                         try:
