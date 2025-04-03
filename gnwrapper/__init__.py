@@ -338,8 +338,8 @@ class Monitor(RecordVideo):
                 elif terminateds[0]:
                     self.close_video_recorder()
 
-        elif self._video_enabled():
-            self.start_video_recorder()
+        # elif self._video_enabled():
+        #     self.start_video_recorder()
 
         # return observations, rewards, terminateds, truncateds, infos
         return observations, rewards, terminateds, infos
