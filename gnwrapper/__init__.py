@@ -299,43 +299,43 @@ class Monitor(RecordVideo):
 
 
         # if not (self.terminated or self.truncated):
-        if not (self.terminated):
+        # if not (self.terminated):
             # increment steps and episodes
-            self.step_id += 1
-            if not self.is_vector_env:
-                # if terminateds or truncateds:
-                if terminateds:
-                    self.episode_id += 1
-                    self.terminated = terminateds
-                    # self.truncated = truncateds
-            # elif terminateds[0] or truncateds[0]:
-            elif terminateds[0]:
+        self.step_id += 1
+        if not self.is_vector_env:
+            # if terminateds or truncateds:
+            if terminateds:
                 self.episode_id += 1
-                self.terminated = terminateds[0]
-                # self.truncated = truncateds[0]
+                self.terminated = terminateds
+                # self.truncated = truncateds
+        # elif terminateds[0] or truncateds[0]:
+        elif terminateds[0]:
+            self.episode_id += 1
+            self.terminated = terminateds[0]
+            # self.truncated = truncateds[0]
 
-            if self.recording:
-                assert self.video_recorder is not None
-                self.video_recorder.capture_frame()
-                # logging.error('video_recoreder.recorded_frames[-1]:%s', self.video_recorder.recorded_frames[-1].shape)
-                self.recorded_frames += 1
-                if self.video_length > 0:
-                    if self.recorded_frames > self.video_length:
-                        self.close_video_recorder()
-                else:
-                    if not self.is_vector_env:
-                        # if terminateds or truncateds:
-                        if terminateds:
-                            try:
-                                self.close_video_recorder()
-                            except:
-                                logging.error(traceback.format_exc())
-                    # elif terminateds[0] or truncateds[0]:
-                    elif terminateds[0]:
-                        self.close_video_recorder()
+        if self.recording:
+            assert self.video_recorder is not None
+            self.video_recorder.capture_frame()
+            # logging.error('video_recoreder.recorded_frames[-1]:%s', self.video_recorder.recorded_frames[-1].shape)
+            self.recorded_frames += 1
+            if self.video_length > 0:
+                if self.recorded_frames > self.video_length:
+                    self.close_video_recorder()
+            else:
+                if not self.is_vector_env:
+                    # if terminateds or truncateds:
+                    if terminateds:
+                        try:
+                            self.close_video_recorder()
+                        except:
+                            logging.error(traceback.format_exc())
+                # elif terminateds[0] or truncateds[0]:
+                elif terminateds[0]:
+                    self.close_video_recorder()
 
-            elif self._video_enabled():
-                self.start_video_recorder()
+        elif self._video_enabled():
+            self.start_video_recorder()
 
         # return observations, rewards, terminateds, truncateds, infos
         return observations, rewards, terminateds, infos
